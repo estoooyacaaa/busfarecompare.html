@@ -1,0 +1,73 @@
+import time
+import random
+
+# Simulación de plataformas con precios base
+platforms = {
+    "RedBus": {"base_price": 50, "fluctuation": 10},
+    "Busbud": {"base_price": 45, "fluctuation": 8},
+    "LocalBus": {"base_price": 55, "fluctuation": 12},
+    "ViajeCom": {"base_price": 40, "fluctuation": 5},
+    "Rome2Rio": {"base_price": 48, "fluctuation": 7}
+}
+
+# Función para simular precios fluctuantes
+def get_simulated_prices(origin, destination, date):
+    results = []
+    for platform, data in platforms.items():
+        price = data["base_price"] + random.randint(-data["fluctuation"], data["fluctuation"])
+        price = max(price, 10)  # Precio mínimo
+        results.append({
+            "platform": platform,
+            "price": price,
+            "origin": origin,
+            "destination": destination,
+            "date": date,
+            "duration": random.randint(4, 12)  # Horas simuladas
+        })
+    return results
+
+# Función para comparar y ordenar por precio más barato
+def compare_and_sort(results):
+    return sorted(results, key=lambda x: x["price"])
+
+# Función principal de búsqueda
+def search_buses(origin, destination, date):
+    print(f"Buscando pasajes de {origin} a {destination} para {date}...")
+    results = get_simulated_prices(origin, destination, date)
+    sorted_results = compare_and_sort(results)
+    
+    print("\nResultados ordenados por precio más barato:")
+    for i, result in enumerate(sorted_results, 1):
+        print(f"{i}. {result['platform']}: ${result['price']} (Duración: {result['duration']} horas)")
+    
+    cheapest = sorted_results[0]
+    print(f"\n⭐ Mejor oferta: {cheapest['platform']} - ${cheapest['price']}")
+    return sorted_results
+
+# Simulación de actualización constante y alertas
+def monitor_prices(origin, destination, date, initial_cheapest):
+    print("\nIniciando monitoreo constante (actualización cada 10 segundos). Presiona Ctrl+C para detener.")
+    while True:
+        time.sleep(10)  # Actualización cada 10 segundos
+        new_results = get_simulated_prices(origin, destination, date)
+        new_sorted = compare_and_sort(new_results)
+        new_cheapest = new_sorted[0]
+        
+        if new_cheapest["price"] < initial_cheapest["price"]:
+            print(f"\n🚨 Alerta: Precio bajó! Nueva mejor oferta: {new_cheapest['platform']} - ${new_cheapest['price']} (antes ${initial_cheapest['price']})")
+            initial_cheapest = new_cheapest
+        else:
+            print(f"Actualización: Mejor precio sigue en ${new_cheapest['price']} ({new_cheapest['platform']})")
+
+# Interfaz de usuario simple
+if __name__ == "__main__":
+    origin = input("Origen: ")
+    destination = input("Destino: ")
+    date = input("Fecha (ej. 2023-10-01): ")
+    
+    initial_results = search_buses(origin, destination, date)
+    initial_cheapest = initial_results[0]
+    
+    monitor = input("¿Activar monitoreo constante? (s/n): ").lower()
+    if monitor == "s":
+        monitor_prices(origin, destination, date, initial_cheapest)
