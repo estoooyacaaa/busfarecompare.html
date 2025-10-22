@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BusFareCompare - Comparador de Pasajes</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .cheapest { background-color: #d4edda; font-weight: bold; }
+        button { padding: 10px; margin: 10px 0; }
+        #alert { color: red; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>BusFareCompare: Comparador de Pasajes de Colectivo</h1>
+    <p>Ingresa origen, destino y fecha para comparar precios en tiempo real. Prioriza el más barato automáticamente.</p>
+    
+    <label>Origen: <input type="text" id="origin" placeholder="Ej. Buenos Aires"></label><br>
+    <label>Destino: <input type="text" id="destination" placeholder="Ej. Córdoba"></label><br>
+    <label>Fecha: <input type="date" id="date"></label><br>
+    <button onclick="searchBuses()">Buscar Pasajes</button>
+    <button onclick="startMonitoring()">Iniciar Monitoreo Constante</button>
+    
+    <div id="alert"></div>
+    <table id="resultsTable">
+        <thead>
+            <tr>
+                <th>Plataforma</th>
+                <th>Precio ($)</th>
+                <th>Duración (horas)</th>
+            </tr>
+        </thead>
+        <tbody id="resultsBody"></tbody>
+    </table>
+
+    <script>
+        const platforms = {
+            "RedBus": { base: 50, fluct: 10 },
+            "Busbud": { base: 45, fluct: 8 },
+            "LocalBus": { base: 55, fluct: 12 },
+            "ViajeCom": { base: 40, fluct: 5 },
+            "Rome2Rio": { base: 48, fluct: 7 }
+        };
+
+        let initialCheapest = null;
+        let monitoring = false;
+
+        function getSimulatedPrices() {
+            const results = [];
+            for (const [platform, data] of Object.entries(platforms)) {
+                const price = data.base + Math.floor(Math.random() * (data.fluct * 2 + 1)) - data.fluct;
+                results.push({
+                    platform,
+                    price: Math.max(price, 10),
+                    duration: Math.floor(Math.random() * 9) + 4
+                });
+            }
+            return results.sort((a, b) => a.price - b.price);
+        }
+
+        function displayResults(results) {
+            const tbody = document.getElementById('resultsBody');
+            tbody.innerHTML = '';
+            results.forEach((result, index) => {
+                const row = tbody.insertRow();
+                row.insertCell(0).textContent = result.platform;
+                row.insertCell(1).textContent = result.price;
+                row.insertCell(2).textContent = result.duration;
+                if (index === 0) {
+                    row.classList.add('cheapest');
+                    document.getElementById('alert').textContent = `⭐ Mejor oferta: ${result.platform} - $${result.price}`;
+                }
+            });
+        }
+
+        function searchBuses() {
+            const origin = document.getElementById('origin').value;
+            const destination = document.getElementById('destination').value;
+            const date = document.getElementById('date').value;
+            if (!origin || !destination || !date) {
+                alert('Completa todos los campos.');
+                return;
+            }
+            const results = getSimulatedPrices();
+            displayResults(results);
+            initialCheapest = results[0];
+        }
+
+        function startMonitoring() {
+            if (monitoring) return;
+            monitoring = true;
+            document.getElementById('alert').textContent = 'Monitoreo iniciado. Actualizando cada 10 segundos...';
+            setInterval(() => {
+                const newResults = getSimulatedPrices();
+                displayResults(newResults);
+                const newCheapest = newResults[0];
+                if (initialCheapest && newCheapest.price < initialCheapest.price) {
+                    document.getElementById('alert').textContent = `🚨 Alerta: Precio bajó! Nueva mejor oferta: ${newCheapest.platform} - $${newCheapest.price} (antes $${initialCheapest.price})`;
+                    initialCheapest = newCheapest;
+                }
+            }, 10000);
+        }
+    </script>
+</body>
+</html>
